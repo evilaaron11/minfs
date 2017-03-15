@@ -17,22 +17,6 @@ void usageMessage() {
    printf("-v verbose --- increase verbosity level\n");
 }
 
-/* get filename */
-/*void getFileStats(FILE *image, struct stat fileStat) {
-   printf((S_ISDIR(fileStat.st_mode)) ? "d" : "-");
-   printf((fileStat.st_mode & S_IRUSR) ? "r" : "-");
-   printf((fileStat.st_mode & S_IWUSR) ? "w" : "-");
-   printf((fileStat.st_mode & S_IXUSR) ? "x" : "-");
-   printf((fileStat.st_mode & S_IRGRP) ? "r" : "-");
-   printf((fileStat.st_mode & S_IWGRP) ? "w" : "-");
-   printf((fileStat.st_mode & S_IXGRP) ? "x" : "-");
-   printf((fileStat.st_mode & S_IROTH) ? "r" : "-");
-   printf((fileStat.st_mode & S_IWOTH) ? "w" : "-");
-   printf((fileStat.st_mode & S_IXOTH) ? "x" : "-");
-   printf(" %i", fileStat.st_size);
-  
-}*/
-
 struct superblock getSB(FILE *image) {
    int offset = BOOT_BLOCK;
    if (fseek(image, offset, SEEK_SET) != 0){
@@ -48,7 +32,7 @@ struct inode getRoot(FILE *image, uint16_t blocksize) {
    struct inode root;
    int offset = 2 * blocksize + iNodeMapSize + zoneMapSize;
    //int offset = 4096 * 16;
-   printf("%d\n", offset);
+   //printf("%d\n", offset);
    if (fseek(image, offset, SEEK_SET) != 0) {
       exit(EXIT_FAILURE);
    }
@@ -107,12 +91,6 @@ void verboseiNode(struct inode *in) {
    printf("zone[6] = %13i\n", in->zone[6]);
 }
 
-/* Print items in the directory */
-void printNames(struct inode currDir, FILE *image) {
-   /* Just printing files in root for now */
-   struct dir mydir;
-
-}
 void parseArgs (char **argv, int argc) {
    /* Parse arguments */
    int cmd, firstPass = TRUE;
@@ -170,50 +148,23 @@ void fileNames(int zoneNum, uint16_t blocksize, uint16_t size,
    }
 }
 
-void getPermissions2(struct inode in)
-{
-   //int mask = 0170000;
-   //int dir = 0040000;
-   //int file = 0100000;
-   //int o_r = 0000400;
-
-   printf("inode mode: %i\n", in.mode);
-   //printf("mask: %i\n", MASK);
-   int res = in.mode & MASK;
-   //int orres = in.mode & 
-   if (res == DIRECT) {
-      printf("Is a directory\n");
-   }
-   
-   if (res == REGFILE) {
-      printf("Is a file\n");
-   }
-   //printf("%s\n", pathName);
-   
-}
- 
 /* Should return permission string */
 
-char * getPermissions(struct inode in)
+char * getPermissions(uint16_t mode)
 {
-   //char permissions[10] = "----------";
-   char *permissions = malloc(sizeof(char) * 10 + 1);
-   permissions = "----------";
-   printf("inode mode: %i\n", in.mode);
-   int res = in.mode & MASK;
-   //int orres = in.mode & 
-   if (res == DIRECT) {
-      printf("Is a directory\n");
-      permissions[0] = 'd';
-   }
-   
-   if (res == REGFILE) {
-      printf("Fileee\n");
-   }
-   //printf("%s\n", pathName);
+   char *permissions = (char *) malloc(sizeof(char) * 10);
+   permissions[0] = (mode & DIRECT) ? 'd' : '-';
+   permissions[1] = (mode & O_READ) ? 'r' : '-';
+   permissions[2] = (mode & O_WRITE) ? 'w' : '-';
+   permissions[3] = (mode & O_EXEC) ? 'x' : '-';
+   permissions[4] = (mode & G_READ) ? 'r' : '-';
+   permissions[5] = (mode & G_WRITE) ? 'w' : '-';
+   permissions[6] = (mode & G_EXEC) ? 'x' : '-';
+   permissions[7] = (mode & OTHER_READ) ? 'r' : '-';
+   permissions[8] = (mode & OTHER_WRITE) ? 'w' : '-';
+   permissions[9] = (mode & OTHER_EXEC) ? 'x' : '-';
    return permissions;
 }
-
 
 /* can get inode numbers from dirent, but not inode mode */
 int getMode(FILE *image, struct dir *filenames, 
@@ -233,16 +184,14 @@ struct inode getiNode(FILE *image, int blocksize, int inodeNum) {
    return root;
 }
 
-void displayNames(struct inode in, struct dir *filenames, 
+void displayNames(struct inode node, struct dir *filenames, 
 	uint16_t blocksize, int numFiles, FILE *image) {
-   struct inode node;
+   struct inode in;
    int i = 0;
-   int offset = 2 * blocksize + iNodeMapSize + zoneMapSize;
    for (i = 0; i < numFiles; i++) {
       node = getiNode(image, blocksize, filenames->inode);
-      printf("%s %u %s\n", "-----------", node.mode, filenames->name);
-      //printf("%s %u %s\n", getPermissions(node), node.mode, filenames->name);
-      getPermissions2(node);
+      printf("%s %i %s\n", getPermissions(node.mode), sizeof(node),
+          filenames->name);
       filenames++;
    }
 }
@@ -280,16 +229,5 @@ int main (int argc, char **argv) {
    displayNames(in, files, sb.blocksize, numFiles, image);
    fclose(image);
 
-   /*int mask = 0170000;
-   int dir = 0040000;
-   printf("inode mode: %i\n", in.mode);
-   printf("mask: %i\n", mask);
-   int res = in.mode & mask;
-   if (res == dir) {
-      printf("Dirrr\n");
-   } */
-   //printf("%s\n", pathName);
-   //getPermissions(in);
    return 0;
-
 }
