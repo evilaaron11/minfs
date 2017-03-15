@@ -18,7 +18,7 @@ void usageMessage() {
 }
 
 /* get filename */
-void getFileStats(FILE *image, struct stat fileStat) {
+/*void getFileStats(FILE *image, struct stat fileStat) {
    printf((S_ISDIR(fileStat.st_mode)) ? "d" : "-");
    printf((fileStat.st_mode & S_IRUSR) ? "r" : "-");
    printf((fileStat.st_mode & S_IWUSR) ? "w" : "-");
@@ -30,8 +30,8 @@ void getFileStats(FILE *image, struct stat fileStat) {
    printf((fileStat.st_mode & S_IWOTH) ? "w" : "-");
    printf((fileStat.st_mode & S_IXOTH) ? "x" : "-");
    printf(" %i", fileStat.st_size);
-   /* print filename */
-}
+  
+}*/
 
 struct superblock getSB(FILE *image) {
    int offset = BOOT_BLOCK;
@@ -106,29 +106,7 @@ void verboseiNode(struct inode *in) {
    printf("zone[5] = %13i\n", in->zone[5]);
    printf("zone[6] = %13i\n", in->zone[6]);
 }
-/*
-void getPermissions(struct inode in)
-{
-   int mask = 0170000;
-   int dir = 0040000;
-   int file = 0100000;
-   int o_r = 0000400;
 
-   printf("inode mode: %i\n", in.mode);
-   printf("mask: %i\n", MASK);
-   int res = in.mode & mask;
-   //int orres = in.mode & 
-   if (res == dir) {
-      printf("Dirrr\n");
-   }
-   
-   if (res == file) {
-      printf("Fileee\n");
-   }
-   //printf("%s\n", pathName);
-   
-}
-*/ 
 /* Print items in the directory */
 void printNames(struct inode currDir, FILE *image) {
    /* Just printing files in root for now */
@@ -190,7 +168,7 @@ void fileNames(int zoneNum, uint16_t blocksize, uint16_t size,
             
    }
 }
-/*
+
 void getPermissions(struct inode in)
 {
    int mask = 0170000;
@@ -204,20 +182,20 @@ void getPermissions(struct inode in)
    //int orres = in.mode & 
    if (res == dir) {
       printf("Dirrr\n");
+      printf("Inode num: %d\n", in.links);
    }
    
    if (res == file) {
       printf("Fileee\n");
    }
-   //printf("%s\n", pathName);   
-}*/
-
+   //printf("%s\n", pathName);
+   
+}
+ 
+/* Should return permission string */
+/*
 char * getPermissions(uint32_t inode)
 {
-   //int mask = 0170000;
-   //int dir = 0040000;
-   //int file = 0100000;
-   //int o_r = 0000400;
    //char permissions[10] = "----------";
    char *permissions = malloc(sizeof(char) * 10);
    permissions = "----------";
@@ -235,14 +213,18 @@ char * getPermissions(uint32_t inode)
    //printf("%s\n", pathName);
    return permissions;
 }
-
+*/
 /* Print items in the directory */
 
 
-void displayNames(struct dir *filenames, int numFiles) {
+void displayNames(struct inode in, struct dir *filenames, 
+	uint16_t blocksize, int numFiles) {
    int i = 0;
+   int offset = 2 * blocksize + iNodeMapSize + zoneMapSize;
    for (i = 0; i < numFiles; i++) {
-      printf("%s %s\n",getPermissions(filenames->inode), filenames->name);
+      //fseek
+      //printf("%s %s\n",getPermissions(filenames->inode), filenames->name);
+      printf("%u %s\n", (filenames)->inode, filenames->name);
       filenames++;
    }
 }
@@ -277,7 +259,7 @@ int main (int argc, char **argv) {
       verboseiNode(&in);   
    }
 
-   displayNames(files, numFiles);
+   displayNames(in, files,sb.blocksize, numFiles);
    fclose(image);
 
    /*int mask = 0170000;
@@ -289,7 +271,7 @@ int main (int argc, char **argv) {
       printf("Dirrr\n");
    } */
    //printf("%s\n", pathName);
-   //getPermissions(in);
+   getPermissions(in);
    return 0;
 
 }
