@@ -11,6 +11,7 @@
 #define FALSE 0
 #define NONE -1
 #define MINIX_MAGIC 0X4D5A
+#define PART_OFFSET 0X1BE
 #define DIR_SIZE 64
 
 
@@ -48,6 +49,20 @@ struct inode {
 struct dir {
 	uint32_t inode;
 	unsigned char name[60];
+};
+
+/* Partition entry */
+struct part {
+   uint8_t bootind;
+   uint8_t start_head;
+   uint8_t start_sec;
+   uint8_t start_cyl;
+   uint8_t type;
+   uint8_t end_head;
+   uint8_t end_sec;
+   uint8_t end_cyl;
+   uint32_t lFirst;
+   uint32_t size;
 };
 
 extern int verbose;
