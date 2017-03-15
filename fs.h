@@ -13,6 +13,19 @@
 #define MINIX_MAGIC 0X4D5A
 #define DIR_SIZE 64
 
+/* Masks */
+#define MASK 		0170000
+#define REGFILE 	0100000
+#define DIRECT 		0040000
+#define O_READ 		0000400
+#define O_WRITE 	0000200
+#define O_EXEC 		0000100
+#define G_READ	 	0000040
+#define G_WRITE 	0000020
+#define G_EXEC 		0000010
+#define OTHER_READ 	0000004
+#define OTHER_WRITE 	0000002
+#define OTHER_EXEC 	0000001
 
 struct superblock {
 	uint32_t ninodes;		/* number of inodes in this filesystem */

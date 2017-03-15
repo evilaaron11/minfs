@@ -65,8 +65,8 @@ void verboseSB(struct superblock *sb) {
    printf("\ti_blocks%12d\n", sb->i_blocks);
    printf("\tz_blocks%12d\n", sb->z_blocks);
    printf("\tfirstdata%11d\n", sb->firstdata);
-   printf("\tlog_zone_size%7d (zone size: %d)\n",
-         sb->log_zone_size, sb->blocksize);
+   printf("\tlog_zone_size%7d (zone size: %d)\n", 
+      sb->log_zone_size, sb->blocksize);
    printf("\tmax_file%12u\n", sb->max_file);
    printf("\tmagic%15x\n", sb->magic);
    printf("\tzones%15d\n", sb->zones);
@@ -89,11 +89,11 @@ void verboseiNode(struct inode *in) {
    printf("\tunsigned short gid%13d\n", in->gid);
    printf("\tuint32_t size%13d\n", in->size);
    printf("\tuint32_t atime%13d --- %s\n",
-         in->atime, ctime(&a));
+      in->atime, ctime(&a));
    printf("\tuint32_t mtime%13d --- %s\n",
-         in->mtime, ctime(&m));
+      in->mtime, ctime(&m));
    printf("\tuint32_t ctime%13d --- %s\n",
-         in->ctime, ctime(&c));
+      in->ctime, ctime(&c));
    printf("\n");
 
    /* Direct zone info */
@@ -106,12 +106,29 @@ void verboseiNode(struct inode *in) {
    printf("zone[5] = %13i\n", in->zone[5]);
    printf("zone[6] = %13i\n", in->zone[6]);
 }
-
-void printPermissions(FILE *image)
+/*
+void getPermissions(struct inode in)
 {
+   int mask = 0170000;
+   int dir = 0040000;
+   int file = 0100000;
+   int o_r = 0000400;
 
+   printf("inode mode: %i\n", in.mode);
+   printf("mask: %i\n", MASK);
+   int res = in.mode & mask;
+   //int orres = in.mode & 
+   if (res == dir) {
+      printf("Dirrr\n");
+   }
+   
+   if (res == file) {
+      printf("Fileee\n");
+   }
+   //printf("%s\n", pathName);
+   
 }
-
+*/ 
 /* Print items in the directory */
 void printNames(struct inode currDir, FILE *image) {
    /* Just printing files in root for now */
@@ -164,32 +181,70 @@ void getMaps(void *inodeMap, void *zoneMap, uint16_t blocksize, FILE *image) {
 }
 
 void fileNames(int zoneNum, uint16_t blocksize, uint16_t size,
-      FILE *image, struct dir **files) {
+                      FILE *image, struct dir **files) {
    int i, offset = blocksize * zoneNum, numFiles = size / DIR_SIZE;
    *files = malloc(numFiles);
    fseek(image, offset, SEEK_SET);
    for (i = 0; i < numFiles; i++) {
-      fread(*files + i, DIR_SIZE, 1, image);
-
+         fread(*files + i, DIR_SIZE, 1, image);
+            
    }
 }
+/*
+void getPermissions(struct inode in)
+{
+   int mask = 0170000;
+   int dir = 0040000;
+   int file = 0100000;
+   int o_r = 0000400;
+
+   printf("inode mode: %i\n", in.mode);
+   printf("mask: %i\n", MASK);
+   int res = in.mode & mask;
+   //int orres = in.mode & 
+   if (res == dir) {
+      printf("Dirrr\n");
+   }
+   
+   if (res == file) {
+      printf("Fileee\n");
+   }
+   //printf("%s\n", pathName);   
+}*/
+
+char * getPermissions(uint32_t inode)
+{
+   //int mask = 0170000;
+   //int dir = 0040000;
+   //int file = 0100000;
+   //int o_r = 0000400;
+   //char permissions[10] = "----------";
+   char *permissions = malloc(sizeof(char) * 10);
+   permissions = "----------";
+   printf("inode mode: %i\n", inode);
+   int res = inode & MASK;
+   //int orres = in.mode & 
+   if (res == DIRECT) {
+      printf("Dirrr\n");
+      permissions[0] = 'd';
+   }
+   
+   if (res == REGFILE) {
+      printf("Fileee\n");
+   }
+   //printf("%s\n", pathName);
+   return permissions;
+}
+
+/* Print items in the directory */
+
 
 void displayNames(struct dir *filenames, int numFiles) {
-   int i = 0, currZone;
+   int i = 0;
    for (i = 0; i < numFiles; i++) {
-      if (filenames->inode)
-         printf("%s\n", filenames->name);
+      printf("%s %s\n",getPermissions(filenames->inode), filenames->name);
       filenames++;
    }
-}
-
-int testMagicNum(struct superblock sb) {
-   if (sb.magic != MINIX_MAGIC) {
-      printf("Bad magic number. (0x%.4x)\n", sb.magic);
-      printf("This doesn't look like a MINIX filesystem.\n");
-      return -1;
-   }
-   return 0;
 }
 
 int main (int argc, char **argv) {
@@ -205,10 +260,6 @@ int main (int argc, char **argv) {
    parseArgs(argv, argc);
    image = fopen(imageName, "rb");
    sb = getSB(image);
-   if (testMagicNum(sb) != 0) {
-      exit(EXIT_FAILURE);
-   }
-
    zoneMapSize = findMapSize(sb.z_blocks, sb.blocksize);
    iNodeMapSize = findMapSize(sb.i_blocks, sb.blocksize);
 
@@ -217,17 +268,28 @@ int main (int argc, char **argv) {
    /* Read iNode bitmap */
    getMaps(inodeMap, zoneMap, sb.blocksize, image);
    in = getRoot(image, sb.blocksize);
-   if (pathName == NULL) {
-      numFiles = in.size / DIR_SIZE;
-      fileNames(in.zone[0], sb.blocksize, in.size, image, &files);
-      displayNames(files, numFiles);
-   }
+   numFiles = in.size / DIR_SIZE;
+   fileNames(in.zone[0], sb.blocksize, in.size, image, &files);
+   //displayNames(files, numFiles);
+
    if (verbose) {
       verboseSB(&sb);
-      verboseiNode(&in);
-
+      verboseiNode(&in);   
    }
+
+   displayNames(files, numFiles);
    fclose(image);
+
+   /*int mask = 0170000;
+   int dir = 0040000;
+   printf("inode mode: %i\n", in.mode);
+   printf("mask: %i\n", mask);
+   int res = in.mode & mask;
+   if (res == dir) {
+      printf("Dirrr\n");
+   } */
+   //printf("%s\n", pathName);
+   //getPermissions(in);
    return 0;
 
 }
