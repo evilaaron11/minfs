@@ -32,7 +32,7 @@ struct inode getRoot(FILE *image, uint16_t blocksize) {
    struct inode root;
    int offset = 2 * blocksize + iNodeMapSize + zoneMapSize;
    //int offset = 4096 * 16;
-   //printf("%d\n", offset);
+   //t printf("%d\n", offset);
    if (fseek(image, offset, SEEK_SET) != 0) {
       exit(EXIT_FAILURE);
    }
@@ -190,7 +190,7 @@ void displayNames(struct inode node, struct dir *filenames,
    int i = 0;
    for (i = 0; i < numFiles; i++) {
       node = getiNode(image, blocksize, filenames->inode);
-      printf("%s %i %s\n", getPermissions(node.mode), sizeof(node),
+      printf("%s %9i %s\n", getPermissions(node.mode), node.size,
           filenames->name);
       filenames++;
    }
