@@ -12,6 +12,7 @@
 #define NONE -1
 #define MINIX_MAGIC 0X4D5A
 #define PART_OFFSET 0X1BE
+#define NUM_POSS_PARTS 4
 #define DIR_SIZE 64
 #define PART_SIG 0X55AA
 #define PART_SIG_OFFSET 510
