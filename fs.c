@@ -144,6 +144,7 @@ void parseArgs (char **argv, int argc) {
       optind++;
    }
 }
+
 int findMapSize(int blocks, int blockSize) {
    int currSize = blockSize;
    while (blocks > (currSize * 8))
@@ -181,8 +182,7 @@ void getPermissions(struct inode in)
    int res = in.mode & mask;
    //int orres = in.mode & 
    if (res == dir) {
-      printf("Dirrr\n");
-      printf("Inode num: %d\n", in.links);
+      printf("Is a directory\n");
    }
    
    if (res == file) {
@@ -203,7 +203,7 @@ char * getPermissions(uint32_t inode)
    int res = inode & MASK;
    //int orres = in.mode & 
    if (res == DIRECT) {
-      printf("Dirrr\n");
+      printf("Is a directory\n");
       permissions[0] = 'd';
    }
    
@@ -214,17 +214,33 @@ char * getPermissions(uint32_t inode)
    return permissions;
 }
 */
-/* Print items in the directory */
 
+/* can get inode numbers from dirent, but not inode mode */
+int getMode(FILE *image, struct dir *filenames, 
+	uint16_t blocksize, int offset) {
+   fseek(image, offset, SEEK_SET);
+   return filenames->inode;
+}
+
+struct inode getiNode(FILE *image, int blocksize, int inodeNum) {
+   struct inode root;
+   int offset = 2 * blocksize + iNodeMapSize + zoneMapSize;
+   int offset2 = (inodeNum - 1) * sizeof(struct inode);
+   if (fseek(image, offset + offset2, SEEK_SET) != 0) {
+      exit(EXIT_FAILURE);
+   }
+   fread(&root, sizeof(struct inode), 1, image);
+   return root;
+}
 
 void displayNames(struct inode in, struct dir *filenames, 
-	uint16_t blocksize, int numFiles) {
+	uint16_t blocksize, int numFiles, FILE *image) {
+   struct inode node;
    int i = 0;
    int offset = 2 * blocksize + iNodeMapSize + zoneMapSize;
    for (i = 0; i < numFiles; i++) {
-      //fseek
-      //printf("%s %s\n",getPermissions(filenames->inode), filenames->name);
-      printf("%u %s\n", (filenames)->inode, filenames->name);
+      node = getiNode(image, blocksize, filenames->inode);
+      printf("%u %s\n", node.mode, filenames->name);
       filenames++;
    }
 }
@@ -259,7 +275,7 @@ int main (int argc, char **argv) {
       verboseiNode(&in);   
    }
 
-   displayNames(in, files,sb.blocksize, numFiles);
+   displayNames(in, files, sb.blocksize, numFiles, image);
    fclose(image);
 
    /*int mask = 0170000;
