@@ -170,37 +170,37 @@ void fileNames(int zoneNum, uint16_t blocksize, uint16_t size,
    }
 }
 
-void getPermissions(struct inode in)
+void getPermissions2(struct inode in)
 {
-   int mask = 0170000;
-   int dir = 0040000;
-   int file = 0100000;
-   int o_r = 0000400;
+   //int mask = 0170000;
+   //int dir = 0040000;
+   //int file = 0100000;
+   //int o_r = 0000400;
 
    printf("inode mode: %i\n", in.mode);
-   printf("mask: %i\n", MASK);
-   int res = in.mode & mask;
+   //printf("mask: %i\n", MASK);
+   int res = in.mode & MASK;
    //int orres = in.mode & 
-   if (res == dir) {
+   if (res == DIRECT) {
       printf("Is a directory\n");
    }
    
-   if (res == file) {
-      printf("Fileee\n");
+   if (res == REGFILE) {
+      printf("Is a file\n");
    }
    //printf("%s\n", pathName);
    
 }
  
 /* Should return permission string */
-/*
-char * getPermissions(uint32_t inode)
+
+char * getPermissions(struct inode in)
 {
    //char permissions[10] = "----------";
-   char *permissions = malloc(sizeof(char) * 10);
+   char *permissions = malloc(sizeof(char) * 10 + 1);
    permissions = "----------";
-   printf("inode mode: %i\n", inode);
-   int res = inode & MASK;
+   printf("inode mode: %i\n", in.mode);
+   int res = in.mode & MASK;
    //int orres = in.mode & 
    if (res == DIRECT) {
       printf("Is a directory\n");
@@ -213,7 +213,7 @@ char * getPermissions(uint32_t inode)
    //printf("%s\n", pathName);
    return permissions;
 }
-*/
+
 
 /* can get inode numbers from dirent, but not inode mode */
 int getMode(FILE *image, struct dir *filenames, 
@@ -240,7 +240,9 @@ void displayNames(struct inode in, struct dir *filenames,
    int offset = 2 * blocksize + iNodeMapSize + zoneMapSize;
    for (i = 0; i < numFiles; i++) {
       node = getiNode(image, blocksize, filenames->inode);
-      printf("%u %s\n", node.mode, filenames->name);
+      printf("%s %u %s\n", "-----------", node.mode, filenames->name);
+      //printf("%s %u %s\n", getPermissions(node), node.mode, filenames->name);
+      getPermissions2(node);
       filenames++;
    }
 }
@@ -287,7 +289,7 @@ int main (int argc, char **argv) {
       printf("Dirrr\n");
    } */
    //printf("%s\n", pathName);
-   getPermissions(in);
+   //getPermissions(in);
    return 0;
 
 }
