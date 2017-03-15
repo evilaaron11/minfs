@@ -40,22 +40,53 @@ struct inode getRoot(FILE *image, uint16_t blocksize) {
    return root;
 }
 
+char * getPermissions(uint16_t mode)
+{
+   char *permissions = (char *) malloc(sizeof(char) * 11);
+   permissions[0] = (mode & DIRECT) ? 'd' : '-';
+   permissions[1] = (mode & O_READ) ? 'r' : '-';
+   permissions[2] = (mode & O_WRITE) ? 'w' : '-';
+   permissions[3] = (mode & O_EXEC) ? 'x' : '-';
+   permissions[4] = (mode & G_READ) ? 'r' : '-';
+   permissions[5] = (mode & G_WRITE) ? 'w' : '-';
+   permissions[6] = (mode & G_EXEC) ? 'x' : '-';
+   permissions[7] = (mode & OTHER_READ) ? 'r' : '-';
+   permissions[8] = (mode & OTHER_WRITE) ? 'w' : '-';
+   permissions[9] = (mode & OTHER_EXEC) ? 'x' : '-';
+   return permissions;
+}
+
 void verboseSB(struct superblock *sb) {
    /* Verbose superblock output */
    /* Magic numbers used to offset col size to a total length of 20 */
    printf("Superblock Contents:\n");
    printf("Stored Fields:\n");
-   printf("\tninodes%13d\n", sb->ninodes);
-   printf("\ti_blocks%12d\n", sb->i_blocks);
-   printf("\tz_blocks%12d\n", sb->z_blocks);
-   printf("\tfirstdata%11d\n", sb->firstdata);
-   printf("\tlog_zone_size%7d (zone size: %d)\n", 
+   printf("  ninodes%13d\n", sb->ninodes);
+   printf("  i_blocks%12d\n", sb->i_blocks);
+   printf("  z_blocks%12d\n", sb->z_blocks);
+   printf("  firstdata%11d\n", sb->firstdata);
+   printf("  log_zone_size%7d (zone size: %d)\n", 
       sb->log_zone_size, sb->blocksize);
-   printf("\tmax_file%12u\n", sb->max_file);
-   printf("\tmagic%15x\n", sb->magic);
-   printf("\tzones%15d\n", sb->zones);
-   printf("\tblocksize%11d\n", sb->blocksize);
-   printf("\tsubversion%10d\n", sb->subversion);
+   printf("  tmax_file%11u\n", sb->max_file);
+   printf("  magic%15x\n", sb->magic);
+   printf("  zones%15d\n", sb->zones);
+   printf("  blocksize%11d\n", sb->blocksize);
+   printf("  subversion%10d\n", sb->subversion);
+}
+
+void verboseComputedFields() {
+   printf("Computed Fields:\n");
+   printf("  version%13i\n", 0);
+   printf("  firstImap%11i\n", 0);
+   printf("  firstZmap%11i\n", 0);
+   printf("  firstIblock%9i\n", 0);
+   printf("  zonesize%12i\n", 0);
+   printf("  ptrs_per_zone%7i\n", 0);
+   printf("  ino_per_zone%8i\n", 0);
+   printf("  wrongended%10i\n", 0);
+   printf("  fileent_size%8i\n", 0);
+   printf("  max_filename%8i\n", 0);
+   printf("  ent_per_zone%8i\n", 0);
    printf("\n");
 }
 
@@ -67,28 +98,28 @@ void verboseiNode(struct inode *in) {
    /* File inode output */
    printf("File inode:\n");
    printf("Stored Fields:\n");
-   printf("\tunsigned short mode%13x (%s)\n", in->mode, "insert permissions");
-   printf("\tunsigned short links%13d\n", in->links);
-   printf("\tunsigned short uid%13d\n", in->uid);
-   printf("\tunsigned short gid%13d\n", in->gid);
-   printf("\tuint32_t size%13d\n", in->size);
-   printf("\tuint32_t atime%13d --- %s\n",
+   printf("  unsigned short mode%13x (%s)\n", in->mode, getPermissions(in->mode));
+   printf("  unsigned short links%13d\n", in->links);
+   printf("  unsigned short uid%13d\n", in->uid);
+   printf("  unsigned short gid%13d\n", in->gid);
+   printf("  uint32_t size%13d\n", in->size);
+   printf("  uint32_t atime%13d --- %s",
       in->atime, ctime(&a));
-   printf("\tuint32_t mtime%13d --- %s\n",
+   printf("  uint32_t mtime%13d --- %s",
       in->mtime, ctime(&m));
-   printf("\tuint32_t ctime%13d --- %s\n",
+   printf("  uint32_t ctime%13d --- %s",
       in->ctime, ctime(&c));
    printf("\n");
 
    /* Direct zone info */
-   printf("Direct zones:\n");
-   printf("zone[0] = %13i\n", in->zone[0]);
-   printf("zone[1] = %13i\n", in->zone[1]);
-   printf("zone[2] = %13i\n", in->zone[2]);
-   printf("zone[3] = %13i\n", in->zone[3]);
-   printf("zone[4] = %13i\n", in->zone[4]);
-   printf("zone[5] = %13i\n", in->zone[5]);
-   printf("zone[6] = %13i\n", in->zone[6]);
+   printf("  Direct zones:\n");
+   printf("\t\tzone[0] = %13i\n", in->zone[0]);
+   printf("\t\tzone[1] = %13i\n", in->zone[1]);
+   printf("\t\tzone[2] = %13i\n", in->zone[2]);
+   printf("\t\tzone[3] = %13i\n", in->zone[3]);
+   printf("\t\tzone[4] = %13i\n", in->zone[4]);
+   printf("\t\tzone[5] = %13i\n", in->zone[5]);
+   printf("\t\tzone[6] = %13i\n", in->zone[6]);
 }
 
 void parseArgs (char **argv, int argc) {
@@ -148,24 +179,6 @@ void fileNames(int zoneNum, uint16_t blocksize, uint16_t size,
    }
 }
 
-/* Should return permission string */
-
-char * getPermissions(uint16_t mode)
-{
-   char *permissions = (char *) malloc(sizeof(char) * 10);
-   permissions[0] = (mode & DIRECT) ? 'd' : '-';
-   permissions[1] = (mode & O_READ) ? 'r' : '-';
-   permissions[2] = (mode & O_WRITE) ? 'w' : '-';
-   permissions[3] = (mode & O_EXEC) ? 'x' : '-';
-   permissions[4] = (mode & G_READ) ? 'r' : '-';
-   permissions[5] = (mode & G_WRITE) ? 'w' : '-';
-   permissions[6] = (mode & G_EXEC) ? 'x' : '-';
-   permissions[7] = (mode & OTHER_READ) ? 'r' : '-';
-   permissions[8] = (mode & OTHER_WRITE) ? 'w' : '-';
-   permissions[9] = (mode & OTHER_EXEC) ? 'x' : '-';
-   return permissions;
-}
-
 /* can get inode numbers from dirent, but not inode mode */
 int getMode(FILE *image, struct dir *filenames, 
 	uint16_t blocksize, int offset) {
@@ -189,8 +202,8 @@ void displayNames(struct inode node, struct dir *filenames,
    struct inode in;
    int i = 0;
    for (i = 0; i < numFiles; i++) {
-      node = getiNode(image, blocksize, filenames->inode);
-      printf("%s %9i %s\n", getPermissions(node.mode), node.size,
+      in = getiNode(image, blocksize, filenames->inode);
+      printf("%s %9i %s\n", getPermissions(in.mode), in.size,
           filenames->name);
       filenames++;
    }
@@ -223,9 +236,12 @@ int main (int argc, char **argv) {
 
    if (verbose) {
       verboseSB(&sb);
+      verboseComputedFields();
       verboseiNode(&in);   
    }
-
+   if (in.mode & DIRECT) {
+      printf("/:\n");
+   }
    displayNames(in, files, sb.blocksize, numFiles, image);
    fclose(image);
 
