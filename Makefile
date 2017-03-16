@@ -1,5 +1,6 @@
+CC = gcc 
 all:
-	gcc fs.c -o minls
+	$(CC) fs.c -o minls
 
 clean:
 	rm minls
