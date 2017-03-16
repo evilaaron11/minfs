@@ -14,13 +14,9 @@
 #define PART_OFFSET 0X1BE
 #define NUM_POSS_PARTS 4
 #define DIR_SIZE 64
-<<<<<<< HEAD
 #define PART_SIG 0X55AA
 #define PART_SIG_OFFSET 510
-=======
 #define MAX_FILENAME 60
-
-/* Masks */
 #define MASK 		0170000
 #define REGFILE 	0100000
 #define DIRECT 		0040000
@@ -33,7 +29,6 @@
 #define OTHER_READ 	0000004
 #define OTHER_WRITE 	0000002
 #define OTHER_EXEC 	0000001
->>>>>>> b863b2ad496e81b13a21817cb765a018a7d17940
 
 struct superblock {
 	uint32_t ninodes;		/* number of inodes in this filesystem */

@@ -237,6 +237,16 @@ void displayNames(struct dir *filenames,
    }
 }
 
+int testMagicNum(struct superblock sb) {
+   if (sb.magic != MINIX_MAGIC) {
+      printf("Bad magic number. (0x%.4x)\n", sb.magic);
+      printf("This doesn't look like a MINIX filesystem.\n");
+      return -1;
+   }
+
+   return 0;
+}
+
 void testPartTable(FILE *image, int offset) {
    int sig;
    fseek(image, offset, SEEK_SET);
@@ -313,9 +323,9 @@ int main (int argc, char **argv) {
       if (subpart >= 0)
          verbosePartTable(subPartition);
    }
-   if (testMagicNum(sb) != 0) {
+   /*if (testMagicNum(sb) != 0) {
       exit(EXIT_FAILURE);
-   }
+   } */
 
    zoneMapSize = findMapSize(sb.z_blocks, sb.blocksize);
    iNodeMapSize = findMapSize(sb.i_blocks, sb.blocksize);
@@ -328,7 +338,6 @@ int main (int argc, char **argv) {
    if (pathName == NULL) {
       numFiles = in.size / DIR_SIZE;
       fileNames(in.zone[0], sb.blocksize, in.size, image, &files);
-      displayNames(files, numFiles);
    }
 
    if (verbose) {
