@@ -54,7 +54,7 @@ struct dir {
 };
 
 /* Partition entry */
-struct part {
+struct __attribute__ ((__packed__)) part {
    uint8_t bootind;
    uint8_t start_head;
    uint8_t start_sec;

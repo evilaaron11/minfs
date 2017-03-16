@@ -136,7 +136,7 @@ void printNames(struct inode currDir, FILE *image) {
    struct dir mydir;
 
 }
-void parseArgs (char **argv, int argc) {
+void parseArgs(char **argv, int argc) {
    /* Parse arguments */
    int cmd, firstPass = TRUE;
    while (optind < argc) {
@@ -211,9 +211,9 @@ int testMagicNum(struct superblock sb) {
    return 0;
 }
 
-void testPartTable(FILE *image) {
+void testPartTable(FILE *image, int offset) {
    int sig;
-   fseek(image, PART_SIG_OFFSET, SEEK_SET);
+   fseek(image, offset, SEEK_SET);
    fread(&sig, sizeof(int), 1, image);
    printf("0x%x\n", sig);
 
@@ -224,7 +224,19 @@ void getParts(FILE *image, struct part parts[]) {
    fseek(image, PART_OFFSET, SEEK_SET);
    for (i = 0; i < NUM_POSS_PARTS; i++) {
       fread(&parts[i], sizeof(struct part), 1, image);
-      testPartTable(image);
+      //testPartTable(image, PART_SIG_OFFSET);
+
+   }
+}
+
+void getSubParts(FILE *image, struct part curr, struct part subParts[]) {
+   /* Do code to get subpartitions */
+   int i, offset = curr.lFirst * SECTOR_SIZE + PART_OFFSET; 
+   
+   fseek(image, offset, SEEK_SET);
+   for (i = 0; i < NUM_POSS_PARTS; i++) {
+      fread(&subParts[i], sizeof(struct part), 1, image);
+      //testPartTable(image, offset + PART_SIG_OFFSET);
 
    }
 }
@@ -236,6 +248,7 @@ int main (int argc, char **argv) {
    struct inode in;
    struct dir *files;
    struct part partition[NUM_POSS_PARTS];
+   struct part subPartition[NUM_POSS_PARTS];
    //struct part test;
    int numFiles;
    //int num;
@@ -262,6 +275,8 @@ int main (int argc, char **argv) {
    printf("part is %d\n", part);
    if (part >= 0) {
       getParts(image, partition);
+      if (subpart >= 0)
+         getSubParts(image, partition[part], subPartition);
    }
    sb = getSB(image);
    if (verbose) {
@@ -269,6 +284,8 @@ int main (int argc, char **argv) {
       verboseiNode(&in);
       if (part >= 0)
          verbosePartTable(partition);
+      if (subpart >= 0)
+         verbosePartTable(subPartition);
    }
    if (testMagicNum(sb) != 0) {
       exit(EXIT_FAILURE);
