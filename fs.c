@@ -107,6 +107,24 @@ void verboseiNode(struct inode *in) {
    printf("zone[6] = %13i\n", in->zone[6]);
 }
 
+void verbosePartTable(struct part parts[]) {
+   int i;
+   printf("Partition table:\n");
+   printf("  Boot head  sec  cyl Type head  sec  cyl   First    Size\n");
+   for (i = 0; i < NUM_POSS_PARTS; i++) {
+      printf("  0x%x", parts[i].bootind);      
+      printf(" %4d", parts[i].start_head);
+      printf(" %4d", parts[i].start_sec);
+      printf(" %4d", parts[i].start_cyl);
+      printf(" 0x%x", parts[i].type);
+      printf(" %4d", parts[i].end_head);
+      printf(" %4d", parts[i].end_sec);
+      printf(" %4d", parts[i].end_cyl);
+      printf(" %5d", parts[i].lFirst);
+      printf("      %5d\n", parts[i].size);
+   }
+}
+
 void printPermissions(FILE *image)
 {
 
@@ -118,7 +136,7 @@ void printNames(struct inode currDir, FILE *image) {
    struct dir mydir;
 
 }
-void parseArgs (char **argv, int argc) {
+void parseArgs(char **argv, int argc) {
    /* Parse arguments */
    int cmd, firstPass = TRUE;
    while (optind < argc) {
@@ -126,6 +144,7 @@ void parseArgs (char **argv, int argc) {
          switch(cmd) {
          case 'p':
             part = atoi(optarg);
+            printf("part here is %d\n", part);
             break;
          case 's':
             subpart = atoi(optarg);
@@ -177,8 +196,8 @@ void fileNames(int zoneNum, uint16_t blocksize, uint16_t size,
 void displayNames(struct dir *filenames, int numFiles) {
    int i = 0, currZone;
    for (i = 0; i < numFiles; i++) {
-      if (filenames->inode)
-         printf("%s\n", filenames->name);
+      if (filenames->inode) 
+         printf("%s at inode %d\n", filenames->name, filenames->inode);
       filenames++;
    }
 }
@@ -192,19 +211,82 @@ int testMagicNum(struct superblock sb) {
    return 0;
 }
 
+void testPartTable(FILE *image, int offset) {
+   int sig;
+   fseek(image, offset, SEEK_SET);
+   fread(&sig, sizeof(int), 1, image);
+   printf("0x%x\n", sig);
+
+}
+
+void getParts(FILE *image, struct part parts[]) {
+   int i;
+   fseek(image, PART_OFFSET, SEEK_SET);
+   for (i = 0; i < NUM_POSS_PARTS; i++) {
+      fread(&parts[i], sizeof(struct part), 1, image);
+      //testPartTable(image, PART_SIG_OFFSET);
+
+   }
+}
+
+void getSubParts(FILE *image, struct part curr, struct part subParts[]) {
+   /* Do code to get subpartitions */
+   int i, offset = curr.lFirst * SECTOR_SIZE + PART_OFFSET; 
+   
+   fseek(image, offset, SEEK_SET);
+   for (i = 0; i < NUM_POSS_PARTS; i++) {
+      fread(&subParts[i], sizeof(struct part), 1, image);
+      //testPartTable(image, offset + PART_SIG_OFFSET);
+
+   }
+}
+
 int main (int argc, char **argv) {
    FILE *image;
    void *inodeMap, *zoneMap;
    struct superblock sb;
    struct inode in;
    struct dir *files;
+   struct part partition[NUM_POSS_PARTS];
+   struct part subPartition[NUM_POSS_PARTS];
+   //struct part test;
    int numFiles;
    //int num;
    verbose = FALSE, part = NONE, subpart = NONE;
-
+   part = subpart = -1;
    parseArgs(argv, argc);
    image = fopen(imageName, "rb");
+   printf("%d\n", sizeof(struct part));
+   /* Test code */
+   /*fseek(image, PART_OFFSET, SEEK_SET);
+     fread(&test, sizeof(struct part),  1, image);
+     printf("0x%x\n", test.bootind);
+     printf("%d\n", test.start_head);
+     printf("%d\n", test.start_sec);
+     printf("%d\n", test.start_cyl);
+     printf("0x%x\n", test.type);
+     printf("%d\n", test.end_head);
+     printf("%d\n", test.end_sec);
+     printf("%d\n", test.end_cyl);
+     printf("%d\n", test.lFirst);
+     printf("%d\n", test.size);
+     testPartTable(image); */
+   /* End test code */
+   printf("part is %d\n", part);
+   if (part >= 0) {
+      getParts(image, partition);
+      if (subpart >= 0)
+         getSubParts(image, partition[part], subPartition);
+   }
    sb = getSB(image);
+   if (verbose) {
+      verboseSB(&sb);
+      verboseiNode(&in);
+      if (part >= 0)
+         verbosePartTable(partition);
+      if (subpart >= 0)
+         verbosePartTable(subPartition);
+   }
    if (testMagicNum(sb) != 0) {
       exit(EXIT_FAILURE);
    }
@@ -221,11 +303,6 @@ int main (int argc, char **argv) {
       numFiles = in.size / DIR_SIZE;
       fileNames(in.zone[0], sb.blocksize, in.size, image, &files);
       displayNames(files, numFiles);
-   }
-   if (verbose) {
-      verboseSB(&sb);
-      verboseiNode(&in);
-
    }
    fclose(image);
    return 0;

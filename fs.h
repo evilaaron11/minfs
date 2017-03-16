@@ -11,8 +11,11 @@
 #define FALSE 0
 #define NONE -1
 #define MINIX_MAGIC 0X4D5A
+#define PART_OFFSET 0X1BE
+#define NUM_POSS_PARTS 4
 #define DIR_SIZE 64
-
+#define PART_SIG 0X55AA
+#define PART_SIG_OFFSET 510
 
 struct superblock {
 	uint32_t ninodes;		/* number of inodes in this filesystem */
@@ -48,6 +51,20 @@ struct inode {
 struct dir {
 	uint32_t inode;
 	unsigned char name[60];
+};
+
+/* Partition entry */
+struct __attribute__ ((__packed__)) part {
+   uint8_t bootind;
+   uint8_t start_head;
+   uint8_t start_sec;
+   uint8_t start_cyl;
+   uint8_t type;
+   uint8_t end_head;
+   uint8_t end_sec;
+   uint8_t end_cyl;
+   uint32_t lFirst;
+   uint32_t size;
 };
 
 extern int verbose;

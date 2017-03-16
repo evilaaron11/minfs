@@ -1,2 +1,5 @@
 all:
-	gcc fs.c
+	gcc fs.c -o minls
+
+clean:
+	rm minls
