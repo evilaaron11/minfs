@@ -12,6 +12,7 @@
 #define NONE -1
 #define MINIX_MAGIC 0X4D5A
 #define DIR_SIZE 64
+#define MAX_FILENAME 60
 
 /* Masks */
 #define MASK 		0170000

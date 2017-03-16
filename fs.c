@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <time.h>
 #include "fs.h"
 
@@ -40,9 +39,10 @@ struct inode getRoot(FILE *image, uint16_t blocksize) {
    return root;
 }
 
-char * getPermissions(uint16_t mode)
+void getPermissions(uint16_t mode)
 {
-   char *permissions = (char *) malloc(sizeof(char) * 11);
+   //char *permissions = (char *) malloc(sizeof(char) * 5);
+   char permissions[] = "----------";
    permissions[0] = (mode & DIRECT) ? 'd' : '-';
    permissions[1] = (mode & O_READ) ? 'r' : '-';
    permissions[2] = (mode & O_WRITE) ? 'w' : '-';
@@ -53,7 +53,8 @@ char * getPermissions(uint16_t mode)
    permissions[7] = (mode & OTHER_READ) ? 'r' : '-';
    permissions[8] = (mode & OTHER_WRITE) ? 'w' : '-';
    permissions[9] = (mode & OTHER_EXEC) ? 'x' : '-';
-   return permissions;
+   printf(permissions);
+   //return permissions;
 }
 
 void verboseSB(struct superblock *sb) {
@@ -74,7 +75,7 @@ void verboseSB(struct superblock *sb) {
    printf("  subversion%10d\n", sb->subversion);
 }
 
-void verboseComputedFields() {
+void verboseComputedFields(struct superblock *sb) {
    printf("Computed Fields:\n");
    printf("  version%13i\n", 0);
    printf("  firstImap%11i\n", 0);
@@ -97,17 +98,19 @@ void verboseiNode(struct inode *in) {
 
    /* File inode output */
    printf("File inode:\n");
-   printf("Stored Fields:\n");
-   printf("  unsigned short mode%13x (%s)\n", in->mode, getPermissions(in->mode));
-   printf("  unsigned short links%13d\n", in->links);
-   printf("  unsigned short uid%13d\n", in->uid);
-   printf("  unsigned short gid%13d\n", in->gid);
+   printf("  unsigned short mode%18x ", in->mode);
+   printf("(");
+   getPermissions(in->mode);
+   printf(")\n");
+   printf("  unsigned short links%17d\n", in->links);
+   printf("  unsigned short uid%19d\n", in->uid);
+   printf("  unsigned short gid%19d\n", in->gid);
    printf("  uint32_t size%13d\n", in->size);
-   printf("  uint32_t atime%13d --- %s",
+   printf("  uint32_t atime%12d --- %s",
       in->atime, ctime(&a));
-   printf("  uint32_t mtime%13d --- %s",
+   printf("  uint32_t mtime%12d --- %s",
       in->mtime, ctime(&m));
-   printf("  uint32_t ctime%13d --- %s",
+   printf("  uint32_t ctime%12d --- %s",
       in->ctime, ctime(&c));
    printf("\n");
 
@@ -120,6 +123,8 @@ void verboseiNode(struct inode *in) {
    printf("\t\tzone[4] = %13i\n", in->zone[4]);
    printf("\t\tzone[5] = %13i\n", in->zone[5]);
    printf("\t\tzone[6] = %13i\n", in->zone[6]);
+   printf(" uint32_t      indirect = %13i\n", in->indirect);
+   printf(" uint32_t \t double = %13i\n", in->two_indirect);
 }
 
 void parseArgs (char **argv, int argc) {
@@ -175,15 +180,7 @@ void fileNames(int zoneNum, uint16_t blocksize, uint16_t size,
    fseek(image, offset, SEEK_SET);
    for (i = 0; i < numFiles; i++) {
          fread(*files + i, DIR_SIZE, 1, image);
-            
    }
-}
-
-/* can get inode numbers from dirent, but not inode mode */
-int getMode(FILE *image, struct dir *filenames, 
-	uint16_t blocksize, int offset) {
-   fseek(image, offset, SEEK_SET);
-   return filenames->inode;
 }
 
 struct inode getiNode(FILE *image, int blocksize, int inodeNum) {
@@ -197,13 +194,14 @@ struct inode getiNode(FILE *image, int blocksize, int inodeNum) {
    return root;
 }
 
-void displayNames(struct inode node, struct dir *filenames, 
+void displayNames(struct dir *filenames, 
 	uint16_t blocksize, int numFiles, FILE *image) {
    struct inode in;
    int i = 0;
    for (i = 0; i < numFiles; i++) {
       in = getiNode(image, blocksize, filenames->inode);
-      printf("%s %9i %s\n", getPermissions(in.mode), in.size,
+      getPermissions(in.mode);
+      printf("%10i %s\n", in.size,
           filenames->name);
       filenames++;
    }
@@ -236,13 +234,13 @@ int main (int argc, char **argv) {
 
    if (verbose) {
       verboseSB(&sb);
-      verboseComputedFields();
+      verboseComputedFields(&sb);
       verboseiNode(&in);   
    }
    if (in.mode & DIRECT) {
       printf("/:\n");
    }
-   displayNames(in, files, sb.blocksize, numFiles, image);
+   displayNames(files, sb.blocksize, numFiles, image);
    fclose(image);
 
    return 0;
