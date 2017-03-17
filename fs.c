@@ -153,11 +153,6 @@ void verbosePartTable(struct part parts[]) {
    }
 }
 
-void printPermissions(FILE *image)
-{
-
-}
-
 /* Print items in the directory */
 void printNames(struct inode currDir, FILE *image) {
    /* Just printing files in root for now */
@@ -167,12 +162,13 @@ void printNames(struct inode currDir, FILE *image) {
 void parseArgs(char **argv, int argc) {
    /* Parse arguments */
    int cmd, firstPass = TRUE;
-   while (optind < argc) {
+
       while ((cmd = getopt(argc, argv, "p:s:vh")) != -1) {
+         //printf("Inside get opt %d\n", optopt);
          switch(cmd) {
          case 'p':
             part = atoi(optarg);
-            printf("part here is %d\n", part);
+            //printf("part here is %d\n", part);
             break;
          case 's':
             subpart = atoi(optarg);
@@ -184,23 +180,16 @@ void parseArgs(char **argv, int argc) {
             verbose = TRUE;
             break;
          default:
+            //printf("What is optopt: %d", optind);
             break;
          }
       }
-      if (firstPass) {
-         printf("Here with optind %d\n", optind);
+         //printf("Here with optind %d\n", optind);
          imageName = argv[optind];
-         printf("At index 6 %s\n", imageName);
-         printf("At index 5 %s\n", argv[5]);
-         printf("At index 7 %s\n", argv[7]);
-         firstPass = FALSE;
-      } else {
-         printf("Got throguht here with optind %d\n", optind);
-         pathName = argv[optind];
-         optind++;
-      }
-      optind++;
-   }
+         if (optind++ < argc) {
+            pathName = argv[optind];
+            printf("path: %s\n", pathName);
+         }
 }
 
 int findMapSize(int blocks, int blockSize) {
