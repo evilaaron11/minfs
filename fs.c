@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <time.h>
 #include "fs.h"
@@ -187,9 +188,14 @@ void parseArgs(char **argv, int argc) {
          }
       }
       if (firstPass) {
+         printf("Here with optind %d\n", optind);
          imageName = argv[optind];
+         printf("At index 6 %s\n", imageName);
+         printf("At index 5 %s\n", argv[5]);
+         printf("At index 7 %s\n", argv[7]);
          firstPass = FALSE;
       } else {
+         printf("Got throguht here with optind %d\n", optind);
          pathName = argv[optind];
          optind++;
       }
@@ -251,9 +257,10 @@ void displayNames(struct dir *filenames,
    int i = 0;
    for (i = 0; i < numFiles; i++) {
       in = getiNode(image, blocksize, lFirst, filenames->inode);
-      getPermissions(in.mode);
-      printf("%10i %s\n", in.size,
-          filenames->name);
+      if (filenames->inode) {
+         getPermissions(in.mode);
+         printf("%10i %s\n", in.size, filenames->name);
+      }
       filenames++;
    }
 }
@@ -307,6 +314,17 @@ void getSubParts(FILE *image, struct part curr, struct part subParts[]) {
    }
 }
 
+void parsePath(char *path) {
+   char *curr;
+
+   curr = strtok(path, "/");
+
+   while (curr != NULL) {
+      printf("Q %s\n", curr);
+      curr = strtok(NULL, "/");
+   }
+}
+
 int main (int argc, char **argv) {
    FILE *image;
    void *inodeMap, *zoneMap;
@@ -355,6 +373,9 @@ int main (int argc, char **argv) {
       numFiles = in.size / DIR_SIZE;
       sizeLeft = fileNames(in.zone[0], getZoneSize(sb.blocksize, 
                sb.log_zone_size), in.size, image, &files, firstSector);
+   } else {
+      printf("Inside else\n");
+      parsePath(pathName);
    }
 
    if (verbose) {
