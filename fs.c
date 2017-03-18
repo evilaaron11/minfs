@@ -240,16 +240,29 @@ struct inode getiNode(FILE *image, int blocksize, uint32_t lFirst, int inodeNum)
 }
 
 void displayNames(struct dir *filenames,
-      uint16_t blocksize, int numFiles, uint32_t lFirst, FILE *image) {
+      uint16_t blocksize, int numFiles, uint32_t lFirst, 
+      FILE *image, struct inode ipath) {
    struct inode in;
    int i = 0;
-   for (i = 0; i < numFiles; i++) {
-      in = getiNode(image, blocksize, lFirst, filenames->inode);
-      if (filenames->inode) {
-         getPermissions(in.mode);
-         printf("%10i %s\n", in.size, filenames->name);
+   if (!pathName) {
+      for (i = 0; i < numFiles; i++) {
+         in = getiNode(image, blocksize, lFirst, filenames->inode);
+         if (filenames->inode) {
+            getPermissions(in.mode);
+            printf("%10i %s\n", in.size, filenames->name);
+         }
+         filenames++;
       }
-      filenames++;
+   }
+   else
+   {
+      for (i = 0; i < numFiles; i++) {
+         if (filenames->inode) {
+            getPermissions(ipath.mode);
+            printf("%10i %s\n", in.size, filenames->name);
+         }
+         filenames++;
+      }
    }
 }
 
@@ -431,9 +444,20 @@ int main (int argc, char **argv) {
          verbosePartTable(subPartition);
    }
    if (in.mode & DIRECT) {
-      printf("/:\n");
+      if (pathName) {
+         printf("%s:\n", pathName);
+      }
+      else {
+         printf("/:\n");
+      }
    }
-   displayNames(files, sb.blocksize, numFiles, firstSector, image);
+   //if (!pathName) {
+      displayNames(files, sb.blocksize, numFiles, firstSector, image, in);
+   //}
+   
+   
+
+      
    fclose(image);
 
    return 0;
