@@ -32,7 +32,7 @@ struct superblock getSB(FILE *image, uint32_t lFirst) {
 
 struct inode getRoot(FILE *image, uint16_t blocksize, uint32_t lFirst) {
    struct inode root;
-   int offset = (2 * blocksize) + iNodeMapSize + zoneMapSize 
+   int offset = (2 * blocksize) + iNodeMapSize + zoneMapSize
       + (lFirst * SECTOR_SIZE);
    //int offset = 4096 * 16;
    //t printf("%d\n", offset);
@@ -74,8 +74,8 @@ void verboseSB(struct superblock *sb) {
    printf("  i_blocks%12d\n", sb->i_blocks);
    printf("  z_blocks%12d\n", sb->z_blocks);
    printf("  firstdata%11d\n", sb->firstdata);
-   printf("  log_zone_size%7d (zone size: %d)\n", 
-      sb->log_zone_size, sb->blocksize);
+   printf("  log_zone_size%7d (zone size: %d)\n",
+         sb->log_zone_size, sb->blocksize);
    printf("  tmax_file%11u\n", sb->max_file);
    printf("  magic%15x\n", sb->magic);
    printf("  zones%15d\n", sb->zones);
@@ -115,11 +115,11 @@ void verboseiNode(struct inode *in) {
    printf("  unsigned short gid%19d\n", in->gid);
    printf("  uint32_t size%13d\n", in->size);
    printf("  uint32_t atime%12d --- %s",
-      in->atime, ctime(&a));
+         in->atime, ctime(&a));
    printf("  uint32_t mtime%12d --- %s",
-      in->mtime, ctime(&m));
+         in->mtime, ctime(&m));
    printf("  uint32_t ctime%12d --- %s",
-      in->ctime, ctime(&c));
+         in->ctime, ctime(&c));
    printf("\n");
 
    /* Direct zone info */
@@ -140,7 +140,7 @@ void verbosePartTable(struct part parts[]) {
    printf("Partition table:\n");
    printf("  Boot head  sec  cyl Type head  sec  cyl   First    Size\n");
    for (i = 0; i < NUM_POSS_PARTS; i++) {
-      printf("  0x%x", parts[i].bootind);      
+      printf("  0x%x", parts[i].bootind);
       printf(" %4d", parts[i].start_head);
       printf(" %4d", parts[i].start_sec);
       printf(" %4d", parts[i].start_cyl);
@@ -163,33 +163,33 @@ void parseArgs(char **argv, int argc) {
    /* Parse arguments */
    int cmd, firstPass = TRUE;
 
-      while ((cmd = getopt(argc, argv, "p:s:vh")) != -1) {
-         //printf("Inside get opt %d\n", optopt);
-         switch(cmd) {
-         case 'p':
-            part = atoi(optarg);
-            //printf("part here is %d\n", part);
-            break;
-         case 's':
-            subpart = atoi(optarg);
-            break;
-         case 'h':
-            usageMessage();
-            break;
-         case 'v':
-            verbose = TRUE;
-            break;
-         default:
-            //printf("What is optopt: %d", optind);
-            break;
-         }
+   while ((cmd = getopt(argc, argv, "p:s:vh")) != -1) {
+      //printf("Inside get opt %d\n", optopt);
+      switch(cmd) {
+      case 'p':
+         part = atoi(optarg);
+         //printf("part here is %d\n", part);
+         break;
+      case 's':
+         subpart = atoi(optarg);
+         break;
+      case 'h':
+         usageMessage();
+         break;
+      case 'v':
+         verbose = TRUE;
+         break;
+      default:
+         //printf("What is optopt: %d", optind);
+         break;
       }
-         //printf("Here with optind %d\n", optind);
-         imageName = argv[optind];
-         if (optind++ < argc) {
-            pathName = argv[optind];
-            printf("path: %s\n", pathName);
-         }
+   }
+   //printf("Here with optind %d\n", optind);
+   imageName = argv[optind];
+   if (optind++ < argc) {
+      pathName = argv[optind];
+      printf("path: %s\n", pathName);
+   }
 }
 
 int findMapSize(int blocks, int blockSize) {
@@ -199,9 +199,9 @@ int findMapSize(int blocks, int blockSize) {
    return currSize;
 }
 
-/* Seek set and return inode and zone map 
- * This function can be generalized for a 
- * partition or subpartition hence why only 
+/* Seek set and return inode and zone map
+ * This function can be generalized for a
+ * partition or subpartition hence why only
  * one struct is needed */
 void getMaps(void *inodeMap, void *zoneMap, uint16_t blocksize,
       uint32_t lFirst, FILE *image) {
@@ -214,23 +214,22 @@ void getMaps(void *inodeMap, void *zoneMap, uint16_t blocksize,
 /* Displays filenam at an inode.
  * Returns size left to grab once zone size is reached */
 int fileNames(int zoneNum, uint16_t zonesize, uint16_t size,
-                      FILE *image, struct dir **files, uint32_t lFirst) {
+      FILE *image, struct dir **files, uint32_t lFirst) {
    int i, offset = zonesize * zoneNum + lFirst * SECTOR_SIZE;
    int numFiles = size / DIR_SIZE, currSize = 0;
    /* Meeds to expand to multiple zone support */
-   *files = malloc(DIR_SIZE * numFiles);
    fseek(image, offset, SEEK_SET);
    for (i = 0; i < numFiles && currSize < zonesize; i++) {
-         fread(*files + i, DIR_SIZE, 1, image);
-         currSize += DIR_SIZE;
-   }         
+      fread(*files + i, DIR_SIZE, 1, image);
+      currSize += DIR_SIZE;
+   }
 
    return size - currSize;
 }
 
 struct inode getiNode(FILE *image, int blocksize, uint32_t lFirst, int inodeNum) {
    struct inode root;
-   int offset = (2 * blocksize) + iNodeMapSize + zoneMapSize 
+   int offset = (2 * blocksize) + iNodeMapSize + zoneMapSize
       + (lFirst * SECTOR_SIZE);
    offset += (inodeNum - 1) * sizeof(struct inode);
    if (fseek(image, offset, SEEK_SET) != 0) {
@@ -240,8 +239,8 @@ struct inode getiNode(FILE *image, int blocksize, uint32_t lFirst, int inodeNum)
    return root;
 }
 
-void displayNames(struct dir *filenames, 
-	uint16_t blocksize, int numFiles, uint32_t lFirst, FILE *image) {
+void displayNames(struct dir *filenames,
+      uint16_t blocksize, int numFiles, uint32_t lFirst, FILE *image) {
    struct inode in;
    int i = 0;
    for (i = 0; i < numFiles; i++) {
@@ -254,6 +253,19 @@ void displayNames(struct dir *filenames,
    }
 }
 
+int getInodeFromPath(struct dir *filenames,
+      uint16_t blocksize, int numFiles, uint32_t lFirst, FILE *image,
+      char *folder) {
+   struct inode in;
+   int i = 0;
+   for (i = 0; i < numFiles; i++) {
+      if (strcmp(folder, filenames->name) == 0)
+         return filenames->inode;
+      filenames++;
+   }
+
+   return 0;
+}
 int testMagicNum(struct superblock sb) {
    if (sb.magic != MINIX_MAGIC) {
       printf("Bad magic number. (0x%.4x)\n", sb.magic);
@@ -293,8 +305,8 @@ void getParts(FILE *image, struct part parts[]) {
 
 void getSubParts(FILE *image, struct part curr, struct part subParts[]) {
    /* Do code to get subpartitions */
-   int i, offset = curr.lFirst * SECTOR_SIZE + PART_OFFSET; 
-   
+   int i, offset = curr.lFirst * SECTOR_SIZE + PART_OFFSET;
+
    fseek(image, offset, SEEK_SET);
    for (i = 0; i < NUM_POSS_PARTS; i++) {
       fread(&subParts[i], sizeof(struct part), 1, image);
@@ -303,15 +315,39 @@ void getSubParts(FILE *image, struct part curr, struct part subParts[]) {
    }
 }
 
-void parsePath(char *path) {
+/* Goes through all inodes and gets names */
+void getAllFiles(struct inode in, uint16_t zonesize,
+      FILE *image, struct dir **files, uint32_t lFirst) {
+   int i, sizeLeft = -1, currFile = 0;
+
+   for (i = 0; sizeLeft != 0 && i < DIRECT_ZONES; i++) {
+      printf("In getAllFiles\n");
+      *files += currFile;
+      sizeLeft = fileNames(in.zone[i], zonesize, in.size, image,
+            files, lFirst);
+      currFile = (in.size - sizeLeft) / DIR_SIZE;
+
+   }
+}
+
+struct inode parsePath(char *path, uint16_t zonesize, FILE *image,
+      struct dir *files, uint32_t lFirst, struct inode root,
+      uint16_t blocksize) {
    char *curr;
+   int inodeNum;
 
    curr = strtok(path, "/");
 
    while (curr != NULL) {
       printf("Q %s\n", curr);
+      getAllFiles(root, zonesize, image, &files, lFirst);
+      inodeNum = getInodeFromPath(files, blocksize, root.size / DIR_SIZE,
+            lFirst, image, curr);
+      root = getiNode(image, blocksize, lFirst, inodeNum);
       curr = strtok(NULL, "/");
    }
+
+   return root;
 }
 
 int main (int argc, char **argv) {
@@ -323,7 +359,7 @@ int main (int argc, char **argv) {
    struct part partition[NUM_POSS_PARTS];
    struct part subPartition[NUM_POSS_PARTS];
    //struct part test;
-   int numFiles, sizeLeft;
+   int numFiles, sizeLeft, i;
    uint32_t firstSector = 0;
    //int num;
    verbose = FALSE, part = NONE, subpart = NONE;
@@ -331,7 +367,7 @@ int main (int argc, char **argv) {
    parseArgs(argv, argc);
    image = fopen(imageName, "rb");
    /*printf("%d\n", sizeof(struct part));
-   printf("part is %d\n", part);  */
+     printf("part is %d\n", part);  */
    if (part >= 0) {
       getParts(image, partition);
       firstSector = partition[part].lFirst;
@@ -344,8 +380,8 @@ int main (int argc, char **argv) {
    // printf("Getting superblock\n");
    sb = getSB(image, firstSector);
    /*if (testMagicNum(sb) != 0) {
-      exit(EXIT_FAILURE);
-   } */
+     exit(EXIT_FAILURE);
+     } */
 
    zoneMapSize = findMapSize(sb.z_blocks, sb.blocksize);
    iNodeMapSize = findMapSize(sb.i_blocks, sb.blocksize);
@@ -358,19 +394,26 @@ int main (int argc, char **argv) {
    //printf("Getting inode root\n");
    in = getRoot(image, sb.blocksize, firstSector);
 
+   numFiles = in.size / DIR_SIZE;
    if (pathName == NULL) {
-      numFiles = in.size / DIR_SIZE;
-      sizeLeft = fileNames(in.zone[0], getZoneSize(sb.blocksize, 
-               sb.log_zone_size), in.size, image, &files, firstSector);
+      files = malloc(numFiles * DIR_SIZE);
+      /*for (i = 0; sizeLeft != 0; i++) {
+         sizeLeft = fileNames(in.zone[i], getZoneSize(sb.blocksize,
+                  sb.log_zone_size), in.size, image, &files, firstSector);
+      } */
+      getAllFiles(in, getZoneSize(sb.blocksize, sb.log_zone_size), image,
+            &files, firstSector);
    } else {
       printf("Inside else\n");
-      parsePath(pathName);
+      //getPath(pathName, in);
+      in = parsePath(pathName, getZoneSize(sb.blocksize,sb.log_zone_size),
+            image, files, firstSector, in, sb.blocksize);
    }
 
    if (verbose) {
       verboseSB(&sb);
       verboseComputedFields(&sb);
-      verboseiNode(&in);   
+      verboseiNode(&in);
       if (part >= 0)
          verbosePartTable(partition);
       if (subpart >= 0)
