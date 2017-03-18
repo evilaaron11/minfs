@@ -259,8 +259,10 @@ int getInodeFromPath(struct dir *filenames,
    struct inode in;
    int i = 0;
    for (i = 0; i < numFiles; i++) {
-      if (strcmp(folder, filenames->name) == 0)
+      if (strcmp(folder, filenames->name) == 0) {
+         printf("Found and inode is %d\n", filenames->inode);
          return filenames->inode;
+      }
       filenames++;
    }
 
@@ -331,20 +333,26 @@ void getAllFiles(struct inode in, uint16_t zonesize,
 }
 
 struct inode parsePath(char *path, uint16_t zonesize, FILE *image,
-      struct dir *files, uint32_t lFirst, struct inode root,
+      struct dir **files, uint32_t lFirst, struct inode root,
       uint16_t blocksize) {
    char *curr;
-   int inodeNum;
+   int inodeNum, numFiles;
 
    curr = strtok(path, "/");
 
    while (curr != NULL) {
+      numFiles = root.size / DIR_SIZE;
+      *files = malloc(sizeof(struct dir) * numFiles);
       printf("Q %s\n", curr);
-      getAllFiles(root, zonesize, image, &files, lFirst);
-      inodeNum = getInodeFromPath(files, blocksize, root.size / DIR_SIZE,
+      getAllFiles(root, zonesize, image, files, lFirst);
+      printf("Above inode nums\n");
+      inodeNum = getInodeFromPath(*files, blocksize, numFiles,
             lFirst, image, curr);
+      printf("Returned inodeNum is %d\n\n", inodeNum);
       root = getiNode(image, blocksize, lFirst, inodeNum);
-      curr = strtok(NULL, "/");
+      curr = strtok(NULL, "/");                    
+      if (curr != NULL)
+         free(*files);
    }
 
    return root;
@@ -396,6 +404,7 @@ int main (int argc, char **argv) {
 
    numFiles = in.size / DIR_SIZE;
    if (pathName == NULL) {
+      printf("There is no pathname\n");
       files = malloc(numFiles * DIR_SIZE);
       /*for (i = 0; sizeLeft != 0; i++) {
          sizeLeft = fileNames(in.zone[i], getZoneSize(sb.blocksize,
@@ -407,7 +416,9 @@ int main (int argc, char **argv) {
       printf("Inside else\n");
       //getPath(pathName, in);
       in = parsePath(pathName, getZoneSize(sb.blocksize,sb.log_zone_size),
-            image, files, firstSector, in, sb.blocksize);
+            image, &files, firstSector, in, sb.blocksize);
+      printf("Verbose returned inode\n");
+      verboseiNode(&in);
    }
 
    if (verbose) {
