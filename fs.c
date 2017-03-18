@@ -217,10 +217,12 @@ int fileNames(int zoneNum, uint16_t zonesize, uint16_t size,
       FILE *image, struct dir **files, uint32_t lFirst) {
    int i, offset = zonesize * zoneNum + lFirst * SECTOR_SIZE;
    int numFiles = size / DIR_SIZE, currSize = 0;
+   struct dir *temp = *files;
    /* Meeds to expand to multiple zone support */
    fseek(image, offset, SEEK_SET);
    for (i = 0; i < numFiles && currSize < zonesize; i++) {
-      fread(*files + i, DIR_SIZE, 1, image);
+      fread(temp + i, DIR_SIZE, 1, image);
+      printf("%s\n", (temp + i)->name);
       currSize += DIR_SIZE;
    }
 
@@ -242,14 +244,16 @@ struct inode getiNode(FILE *image, int blocksize, uint32_t lFirst, int inodeNum)
 void displayNames(struct dir *filenames,
       uint16_t blocksize, int numFiles, uint32_t lFirst, FILE *image) {
    struct inode in;
+   struct dir *temp = filenames;
    int i = 0;
    for (i = 0; i < numFiles; i++) {
-      in = getiNode(image, blocksize, lFirst, filenames->inode);
-      if (filenames->inode) {
+      printf("inside display names\n");
+      in = getiNode(image, blocksize, lFirst, temp->inode);
+      if (temp->inode) {
          getPermissions(in.mode);
-         printf("%10i %s\n", in.size, filenames->name);
+         printf("%10i %s\n", in.size, temp->name);
       }
-      filenames++;
+      temp++;
    }
 }
 
@@ -320,40 +324,53 @@ void getSubParts(FILE *image, struct part curr, struct part subParts[]) {
 /* Goes through all inodes and gets names */
 void getAllFiles(struct inode in, uint16_t zonesize,
       FILE *image, struct dir **files, uint32_t lFirst) {
-   int i, sizeLeft = -1, currFile = 0;
-
+   int i, sizeLeft = in.size, currFile = 0;
+   struct dir *temp;
    for (i = 0; sizeLeft != 0 && i < DIRECT_ZONES; i++) {
       printf("In getAllFiles\n");
-      *files += currFile;
-      sizeLeft = fileNames(in.zone[i], zonesize, in.size, image,
-            files, lFirst);
+      //temp += numPerZone;
+      temp = *files + currFile;
+      sizeLeft = fileNames(in.zone[i], zonesize, sizeLeft, image,
+            &temp, lFirst);    
+      printf("sizeleft is %d\n", sizeLeft);
       currFile = (in.size - sizeLeft) / DIR_SIZE;
+      printf("currFileNum is %d\n", currFile);
 
    }
 }
 
 struct inode parsePath(char *path, uint16_t zonesize, FILE *image,
-      struct dir **files, uint32_t lFirst, struct inode root,
+      struct dir **files, uint32_t lFirst, int *numF, struct inode root,
       uint16_t blocksize) {
    char *curr;
    int inodeNum, numFiles;
+   struct dir *temp;
 
    curr = strtok(path, "/");
 
    while (curr != NULL) {
       numFiles = root.size / DIR_SIZE;
-      *files = malloc(sizeof(struct dir) * numFiles);
+      temp = malloc(sizeof(struct dir) * numFiles);
       printf("Q %s\n", curr);
-      getAllFiles(root, zonesize, image, files, lFirst);
+      getAllFiles(root, zonesize, image, &temp, lFirst);
       printf("Above inode nums\n");
-      inodeNum = getInodeFromPath(*files, blocksize, numFiles,
+      inodeNum = getInodeFromPath(temp, blocksize, numFiles,
             lFirst, image, curr);
       printf("Returned inodeNum is %d\n\n", inodeNum);
       root = getiNode(image, blocksize, lFirst, inodeNum);
       curr = strtok(NULL, "/");                    
-      if (curr != NULL)
-         free(*files);
+      free(temp);
    }
+
+   numFiles = root.size / DIR_SIZE;
+   printf("Num files are %d\n", numFiles);
+   temp = malloc(sizeof(struct dir) * numFiles);
+   getAllFiles(root, zonesize, image, &temp, lFirst);
+   printf("\nShould display filenames\n");
+   displayNames(temp, blocksize, numFiles, lFirst, image);
+   printf("\n\n");
+   *files = temp;
+   *numF = numFiles;
 
    return root;
 }
@@ -416,7 +433,7 @@ int main (int argc, char **argv) {
       printf("Inside else\n");
       //getPath(pathName, in);
       in = parsePath(pathName, getZoneSize(sb.blocksize,sb.log_zone_size),
-            image, &files, firstSector, in, sb.blocksize);
+            image, &files, firstSector, &numFiles, in, sb.blocksize);
       printf("Verbose returned inode\n");
       verboseiNode(&in);
    }
@@ -431,8 +448,14 @@ int main (int argc, char **argv) {
          verbosePartTable(subPartition);
    }
    if (in.mode & DIRECT) {
-      printf("/:\n");
+      if (pathName) {
+         printf("%s:\n", pathName);
+      }
+      else {   
+         printf("/:\n");
+      }
    }
+   printf("The size of the dirs are %d\n", sizeof(files));
    displayNames(files, sb.blocksize, numFiles, firstSector, image);
    fclose(image);
 
