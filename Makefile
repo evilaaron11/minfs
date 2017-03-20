@@ -1,6 +1,9 @@
 CC = gcc 
-all:
+all: clean minget
 	$(CC) verbose.c fs.c -o minls
+	export PATH=$$PATH:$$PWD
 
+minget:
+	$(CC) minget.c -o minget
 clean:
-	rm minls
+	rm -f minls minget
